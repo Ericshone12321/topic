@@ -44,10 +44,11 @@ public class Frame  extends JFrame {
 	JLabel ThresholdEnd = new JLabel("300");
 	JTextField tfHueValue = new JTextField(3);
 	
-
+	String maskPath = "Sobel\\answer7\\fold1_0.png";
+	BufferedImage maskImg = Util.loadImg(maskPath);
+	int[][][] mask = Util.makeRGBData(maskImg);
 	int[][][] data;
 	int[][][] resultData;
-	int[][][] originSobelData;
 	int height, width;
 	static BufferedImage imgGrayScale = null;
 	static BufferedImage imgSobel = null;
@@ -72,7 +73,7 @@ public class Frame  extends JFrame {
 		tfCloseCount = new JTextField(5);
 		btnReset = new JButton("Reset");
 		lbIOU = new JLabel("IOU");
-		tfIOU = new JTextField(5);
+		tfIOU = new JTextField(7);
 		tfIOU.setEditable(false);
 
 		cotrolPanelMain = new JPanel();
@@ -122,6 +123,7 @@ public class Frame  extends JFrame {
 		btnDilate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				scale(255);
+				tfIOU.setText(IOU(resultData));
 				BufferedImage imgDilate = Util.makeImg(resultData);
 				Graphics g = imagePanelRight.getGraphics();
 				g.drawImage(imgDilate, 0, 0, null);
@@ -133,6 +135,7 @@ public class Frame  extends JFrame {
 		btnErode.addActionListener(new ActionListener() {			
 			public void actionPerformed(ActionEvent arg0) {
 				scale(0);
+				tfIOU.setText(IOU(resultData));
 				BufferedImage imgErode = Util.makeImg(resultData);
 				Graphics g = imagePanelRight.getGraphics();
 				g.drawImage(imgErode, 0, 0, null);
@@ -150,6 +153,7 @@ public class Frame  extends JFrame {
 				for(int j = 0; j < num; j++) {
 					scale(255);
 				}
+				tfIOU.setText(IOU(resultData));
 				BufferedImage imgOpen = Util.makeImg(resultData);
 				Graphics g = imagePanelRight.getGraphics();
 				g.drawImage(imgOpen, 0, 0, null);
@@ -165,6 +169,7 @@ public class Frame  extends JFrame {
 				for(int j = 0; j < num; j++) {
 					scale(0);
 				}
+				tfIOU.setText(IOU(resultData));
 				BufferedImage imgClose = Util.makeImg(resultData);
 				Graphics g = imagePanelRight.getGraphics();
 				g.drawImage(imgClose, 0, 0, null);
@@ -174,9 +179,7 @@ public class Frame  extends JFrame {
 
 		btnReset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				BufferedImage imgReset = Util.makeImg(originSobelData);
-				Graphics g = imagePanelRight.getGraphics();
-				g.drawImage(imgReset, 0, 0, null);
+				doSobel();
 				count = 0;
 				tfCount.setText(count + "");
 			}
@@ -191,7 +194,7 @@ public class Frame  extends JFrame {
 	}
      
 	void loadImg() {
-		imgGrayScale = Util.loadImg("grayImg\\fold1_0.png");
+		imgGrayScale = Util.loadImg("Sobel\\grayImg\\fold1_0.png");
 		Util.imgLeft = imgGrayScale;
 		data = Util.makeRGBData(imgGrayScale);
 		height = data.length;
@@ -202,7 +205,7 @@ public class Frame  extends JFrame {
 		double thresholdOffset = sliderThreshold.getValue();
 		int [][][] newData = AdjSobel(data, thresholdOffset);
 		resultData = newData;
-		originSobelData = newData;
+		tfIOU.setText(IOU(resultData));
 		imgSobel = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Util.imgRight = imgSobel;
 		imgSobel = Util.makeImg(resultData);
@@ -227,8 +230,6 @@ public class Frame  extends JFrame {
 		}
 		return newData;
 	}
-
-	
 
 	void scale(int rgb) {
 		int[][][] check = new int[height][width][1];
@@ -257,6 +258,47 @@ public class Frame  extends JFrame {
 			}
 		}
 	}
+
+	String IOU(int[][][] data) {
+		int tp = 0;
+		int tn = 0;
+		int fp = 0;
+		int fn = 0;
+		int[][] position = select_section(data);
+		for(int i = position[0][1]; i < position[1][1]; i++) {
+			for(int j = position[0][0]; j < position[1][0]; j++) {
+				if(data[i][j][0] == 255 && mask[i][j][0] == 255) {
+					tp += 1;
+				}
+				else if(data[i][j][0] == 0 && mask[i][j][0] == 255) {
+					fn += 1;
+				}
+				else if(data[i][j][0] == 255 && mask[i][j][0] == 0) {
+					fp += 1;
+				}
+				else if(data[i][j][0] == 0 && mask[i][j][0] == 0) {
+					tn += 1;
+				}
+			}
+		}
+		double IOU_value = (double)tp / (double)(tp + fp + fn);
+		return String.format("%.4f", IOU_value);
+	}
+
+	int[][] select_section(int[][][] data) {
+        int x0 = data[0].length, x1 = 0, y0 = data.length, y1 = 0;
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[0].length; j++) {
+                if (data[i][j][0] == 255) {
+                    x0 = Math.min(x0, j);
+                    x1 = Math.max(x1, j);
+                    y0 = Math.min(y0, i);
+                    y1 = Math.max(y1, i);
+                } 
+            }
+        }
+        return new int[][] {{x0, y0}, {x1, y1}};
+    }
 	
 	public static void main(String[] args) {
 		Frame frame = new Frame();
