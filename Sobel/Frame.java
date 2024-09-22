@@ -15,6 +15,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class Frame  extends JFrame {
+	int count;
 	JPanel cotrolPanelMain = new JPanel();
 	JPanel cotrolPanelShow = new JPanel();;
 	JPanel cotrolPanelThreshold = new JPanel();
@@ -22,15 +23,32 @@ public class Frame  extends JFrame {
 	JPanel cotrolPanelBin = new JPanel();
 	JPanel cotrolPanelSobel = new JPanel();
 	JPanel imagePanelOrg;
-	JPanel imagePanelSobel;
+	JPanel imagePanelRight;
 	JButton btnShow;
 	JSlider sliderThreshold;
-	JLabel lbThreshold = new JLabel("    Threshold");
+	JButton btnDilate;
+	JButton btnErode;
+	JButton btnOpen;
+	JButton btnClose;
+	JButton btnReset;
+	JLabel lbCount;
+	JTextField tfCount;
+	JLabel lbOpenCount;
+	JTextField tfOpenCount;
+	JLabel lbCloseCount;
+	JTextField tfCloseCount;
+	JLabel lbIOU;
+	JTextField tfIOU;
+	JLabel lbThreshold = new JLabel("Threshold ");
 	JLabel ThresholdBeging = new JLabel("0");
 	JLabel ThresholdEnd = new JLabel("300");
 	JTextField tfHueValue = new JTextField(3);
+	
 
 	int[][][] data;
+	int[][][] resultData;
+	int[][][] originSobelData;
+	int height, width;
 	static BufferedImage imgGrayScale = null;
 	static BufferedImage imgSobel = null;
 	
@@ -41,38 +59,126 @@ public class Frame  extends JFrame {
 		btnShow = new JButton("Show GrayScale Image");
 		tfHueValue.setText("0");
 		tfHueValue.setEditable(false);
+		btnDilate = new JButton("Dilate");
+		btnErode = new JButton("Erode");
+		lbCount = new JLabel("Count");
+		tfCount = new JTextField(5);
+		tfCount.setEditable(false);
+		btnOpen = new JButton("Open");
+		lbOpenCount = new JLabel("Times (Open)");
+		tfOpenCount = new JTextField(5);
+		btnClose = new JButton("Close");
+		lbCloseCount = new JLabel("Times (Close)");
+		tfCloseCount = new JTextField(5);
+		btnReset = new JButton("Reset");
+		lbIOU = new JLabel("IOU");
+		tfIOU = new JTextField(5);
+		tfIOU.setEditable(false);
 
-		
 		cotrolPanelMain = new JPanel();
 		cotrolPanelMain.setLayout(new GridLayout(6, 1));
 		sliderThreshold = new JSlider(0, 300, 0);
-		cotrolPanelShow.add(btnShow);
+		cotrolPanelThreshold.add(btnShow);
 		cotrolPanelThreshold.add(ThresholdBeging);
 		cotrolPanelThreshold.add(sliderThreshold);
 		cotrolPanelThreshold.add(ThresholdEnd);
 		cotrolPanelThreshold.add(tfHueValue);
 		cotrolPanelThreshold.add(lbThreshold);
+		cotrolPanelThreshold.add(btnDilate);
+		cotrolPanelThreshold.add(btnErode);
+		cotrolPanelThreshold.add(lbCount);
+		cotrolPanelThreshold.add(tfCount);
+		cotrolPanelThreshold.add(btnOpen);
+		cotrolPanelThreshold.add(lbOpenCount);
+		cotrolPanelThreshold.add(tfOpenCount);
+		cotrolPanelThreshold.add(btnClose);
+		cotrolPanelThreshold.add(lbCloseCount);
+		cotrolPanelThreshold.add(tfCloseCount);
+		cotrolPanelThreshold.add(btnReset);
+		cotrolPanelThreshold.add(lbIOU);
+		cotrolPanelThreshold.add(tfIOU);
 
-		cotrolPanelMain.add(cotrolPanelShow);
 		cotrolPanelMain.add(cotrolPanelThreshold);
-
 		cotrolPanelMain.add(cotrolPanelSobel);
 		cotrolPanelMain.add(cotrolPanelBin);
-		cotrolPanelMain.setBounds(0, 0, 1200, 200);
+		cotrolPanelMain.setBounds(0, 0, 1500, 200);
 		getContentPane().add(cotrolPanelMain);
 
 		imagePanelOrg = new ImagePanelLeft();
-		imagePanelOrg.setBounds(0, 220, 700, 700);
+		imagePanelOrg.setBounds(0, 70, 700, 700);
 		getContentPane().add(imagePanelOrg);
-		imagePanelSobel = new ImagePanelRight();
-		imagePanelSobel.setBounds(750, 220, 700, 700);
-		getContentPane().add(imagePanelSobel);
+		imagePanelRight = new ImagePanelRight();
+		imagePanelRight.setBounds(750, 70, 700, 700);
+		getContentPane().add(imagePanelRight);
 
 		btnShow.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				loadImg();
 				Graphics g = imagePanelOrg.getGraphics();
 				g.drawImage(imgGrayScale, 0, 0, null);
+			}
+		});
+
+		btnDilate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				scale(255);
+				BufferedImage imgDilate = Util.makeImg(resultData);
+				Graphics g = imagePanelRight.getGraphics();
+				g.drawImage(imgDilate, 0, 0, null);
+				count += 1;
+				tfCount.setText(count + "");
+			}
+		});
+
+		btnErode.addActionListener(new ActionListener() {			
+			public void actionPerformed(ActionEvent arg0) {
+				scale(0);
+				BufferedImage imgErode = Util.makeImg(resultData);
+				Graphics g = imagePanelRight.getGraphics();
+				g.drawImage(imgErode, 0, 0, null);
+				count -= 1;
+				tfCount.setText(count + "");
+			}
+		});
+
+		btnOpen.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int num = Integer.parseInt(tfOpenCount.getText());
+				for(int i = 0; i < num; i++) {
+					scale(0);
+				}
+				for(int j = 0; j < num; j++) {
+					scale(255);
+				}
+				BufferedImage imgOpen = Util.makeImg(resultData);
+				Graphics g = imagePanelRight.getGraphics();
+				g.drawImage(imgOpen, 0, 0, null);
+			}
+		});
+
+		btnClose.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int num = Integer.parseInt(tfCloseCount.getText());
+				for(int i = 0; i < num; i++) {
+					scale(255);
+				}
+				for(int j = 0; j < num; j++) {
+					scale(0);
+				}
+				BufferedImage imgClose = Util.makeImg(resultData);
+				Graphics g = imagePanelRight.getGraphics();
+				g.drawImage(imgClose, 0, 0, null);
+				
+			}
+		});
+
+		btnReset.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				BufferedImage imgReset = Util.makeImg(originSobelData);
+				Graphics g = imagePanelRight.getGraphics();
+				g.drawImage(imgReset, 0, 0, null);
+				count = 0;
+				tfCount.setText(count + "");
 			}
 		});
 	    
@@ -84,35 +190,30 @@ public class Frame  extends JFrame {
 		});
 	}
      
-	
 	void loadImg() {
-		imgGrayScale = Util.loadImg("Sobel\\grayImg\\fold6_0.png");
+		imgGrayScale = Util.loadImg("grayImg\\fold1_0.png");
 		Util.imgLeft = imgGrayScale;
 		data = Util.makeRGBData(imgGrayScale);
+		height = data.length;
+		width = data[0].length;
 	}
 
 	void doSobel() {
 		double thresholdOffset = sliderThreshold.getValue();
 		int [][][] newData = AdjSobel(data, thresholdOffset);
-		imgSobel = new BufferedImage(newData[0].length, newData.length, BufferedImage.TYPE_INT_ARGB);
+		resultData = newData;
+		originSobelData = newData;
+		imgSobel = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Util.imgRight = imgSobel;
-		for (int y=0; y < newData.length; y++) {
-        	for (int x=0; x < newData[0].length; x++) {
-        		int rgb = Util.makeColor(newData[y][x][0],
-        								 newData[y][x][1], 
-        								 newData[y][x][2]);
-        		imgSobel.setRGB(x, y, rgb);
-        	}
-        }
-        Graphics g = imagePanelSobel.getGraphics();
+		imgSobel = Util.makeImg(resultData);
+        Graphics g = imagePanelRight.getGraphics();
 		g.drawImage(imgSobel, 0, 0, null);
-
 	}
 
 	int[][][] AdjSobel(int[][][] data, double thresholdOffset) {
-		int[][][] newData = new int[data.length][data[0].length][3];
-		for(int i = 1; i < data.length - 1; i++) {
-			for(int j = 1; j < data[i].length - 1; j++) {
+		int[][][] newData = new int[height][width][3];
+		for(int i = 1; i < height - 1; i++) {
+			for(int j = 1; j < width - 1; j++) {
 				double gx = (data[i - 1][j + 1][0] - data[i - 1][j - 1][0]) + 2 * (data[i][j + 1][0] - data[i][j - 1][0]) + (data[i + 1][j + 1][0] - data[i + 1][j - 1][0]);
 				double gy = (data[i - 1][j - 1][0] - data[i + 1][j - 1][0]) + 2 * (data[i - 1][j][0] - data[i + 1][j][0]) + (data[i - 1][j + 1][0] - data[i + 1][j + 1][0]);
 
@@ -125,6 +226,36 @@ public class Frame  extends JFrame {
 			}
 		}
 		return newData;
+	}
+
+	
+
+	void scale(int rgb) {
+		int[][][] check = new int[height][width][1];
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				if(resultData[y][x][0] == rgb) {
+					check[y][x][0] = 1;
+				}
+			}
+		}
+		
+		for (int y = 1; y < height - 1; y++) {
+			for (int x = 1; x < width - 1; x++) {
+				if(check[y][x][0] == 1) {
+					for(int i = 0; i < 3; i++) {
+						resultData[y - 1][x - 1][i] = rgb;
+						resultData[y - 1][x][i] = rgb;
+						resultData[y - 1][x + 1][i] = rgb;
+						resultData[y][x - 1][i] = rgb;
+						resultData[y][x + 1][i] = rgb;
+						resultData[y + 1][x - 1][i] = rgb;
+						resultData[y + 1][x][i] = rgb;
+						resultData[y + 1][x + 1][i] = rgb;
+					}
+				}
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
