@@ -1,9 +1,7 @@
-package Sobel;
-
+import java.util.Arrays;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 
 public class Util {
@@ -105,7 +103,7 @@ public class Util {
         return newImg;
 	}
 	
-	static int[][][] makeRGBData(BufferedImage img) {
+	public static int[][][] makeRGBData(BufferedImage img) {
 		int height = img.getHeight();
 		int width = img.getWidth();
 		int[][][] data = new int[height][width][3];
@@ -130,5 +128,79 @@ public class Util {
 		}
 		return img;
 	}
+
+	static int[][][] median_filter(int[][][] data) {
+		for(int i = 1; i < data.length - 1; i++) {
+			for(int j = 1; j < data[i].length - 1; j++) {
+				int[] target = new int[9];
+				target[0] = data[i - 1][j - 1][0];
+				target[1] = data[i - 1][j][0];
+				target[2] = data[i - 1][j + 1][0];
+				target[3] = data[i][j - 1][0];
+				target[4] = data[i][j][0];
+				target[5] = data[i][j + 1][0];
+				target[6] = data[i + 1][j - 1][0];
+				target[7] = data[i + 1][j][0];
+				target[8] = data[i + 1][j + 1][0];
+				Arrays.sort(target);
+				data[i][j][0] = target[4];
+				data[i][j][1] = target[4];
+				data[i][j][2] = target[4];
+			}
+		}
+		return data;
+	}
+
+	static int[][][] stretch(int[][][] data) {
+		int height = data.length;
+		int width = data[0].length;
+		int[][][] newData = new int[height][width][3];
+		double[] cdf = new double[256];
+		int[] histogram = new int[256];
+		int total = width * height;
+		for (int j = 0; j < height; j++) {
+			for (int i = 0; i < width; i++) {
+				histogram[data[j][i][0]] += 1;
+			}
+		}
+
+		int sum = 0;
+		for (int i = 0; i < 256; i++) {
+			sum += histogram[i];
+			cdf[i] = (double) sum / total;
+			cdf[i] = Math.round(cdf[i] * 255);
+		}
+
+		for (int j = 0; j < height; j++) {
+			for (int i = 0; i < width; i++) {
+				int oldPixelValue = data[j][i][0];
+				int newPixelValue = Util.checkPixelBounds((int) cdf[oldPixelValue]);
+				int newValue = Util.checkPixelBounds((int) Math.round(newPixelValue));
+				for (int c = 0; c < 3; c++) {
+					newData[j][i][c] = newValue;
+				}
+			}
+		}
+		return newData;
+	}
 	
+	static int[][][] sobel(int[][][] data, int threshold) {
+		int height = data.length;
+		int width = data[0].length;
+		int[][][] newData = new int[height][width][3];
+		for(int i = 1; i < height - 1; i++) {
+			for(int j = 1; j < width - 1; j++) {
+				double gx = (data[i - 1][j + 1][0] - data[i - 1][j - 1][0]) + 2 * (data[i][j + 1][0] - data[i][j - 1][0]) + (data[i + 1][j + 1][0] - data[i + 1][j - 1][0]);
+				double gy = (data[i - 1][j - 1][0] - data[i + 1][j - 1][0]) + 2 * (data[i - 1][j][0] - data[i + 1][j][0]) + (data[i - 1][j + 1][0] - data[i + 1][j + 1][0]);
+
+				double G = Math.sqrt(Math.pow(gx, 2) + Math.pow(gy, 2));
+				if(G > threshold) {
+					newData[i][j][0] = 255;
+					newData[i][j][1] = 255;
+					newData[i][j][2] = 255;
+				}
+			}
+		}
+		return newData;
+	}
 }

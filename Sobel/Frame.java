@@ -1,5 +1,3 @@
-package Sobel;
-
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -44,7 +42,7 @@ public class Frame  extends JFrame {
 	JLabel ThresholdEnd = new JLabel("300");
 	JTextField tfHueValue = new JTextField(3);
 	
-	String maskPath = "Sobel\\answer7\\fold1_0.png";
+	String maskPath = "answer7\\fold5_0.png";
 	BufferedImage maskImg = Util.loadImg(maskPath);
 	int[][][] mask = Util.makeRGBData(maskImg);
 	int[][][] data;
@@ -194,9 +192,11 @@ public class Frame  extends JFrame {
 	}
      
 	void loadImg() {
-		imgGrayScale = Util.loadImg("Sobel\\grayImg\\fold1_0.png");
+		imgGrayScale = Util.loadImg("grayImg\\fold5_0.png");
 		Util.imgLeft = imgGrayScale;
 		data = Util.makeRGBData(imgGrayScale);
+		//data = Util.median_filter(data);
+		//data = Util.stretch(data);
 		height = data.length;
 		width = data[0].length;
 	}
