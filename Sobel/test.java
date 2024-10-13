@@ -1,28 +1,15 @@
-import java.io.File;
-import java.io.IOException;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
+import java.util.ArrayList;
 
 public class test {
     public static void main(String args[]) {
-        String path = "grayImg\\fold7_0.png";
-        String newPath = "bottleSide\\";
-        BufferedImage img, newImg;
-        int data[][][], newData[][][];
-        img = Util.loadImg(path);
-        data = Util.makeRGBData(img);
-        //newData = Util.stretch(data);
-        //newData = Util.median_filter(data);
-        newData = Util.sobel(data, 280);
-        newImg = Util.makeImg(newData);
-        try {
-            File newFile = new File(newPath + "side7.png");              
-            ImageIO.write(newImg, "png", newFile);
-            System.out.println("已完成!");
+        final ArrayList <int[]> arr = new ArrayList<int[]>();
+        int[] a = {1, 2};
+        int[] b = {3, 4};
+        arr.add(a);
+        arr.add(b);
+        arr.remove(0);
 
-        } catch(IOException e) {
-            System.out.println("IO exception");
-        }
-
-    } 
+        System.out.println(arr.size());
+        
+    }
 }
