@@ -193,12 +193,13 @@ public class Frame  extends JFrame {
      
 	void loadImg() {
 		imgGrayScale = Util.loadImg("grayImg\\fold5_0.png");
-		Util.imgLeft = imgGrayScale;
 		data = Util.makeRGBData(imgGrayScale);
 		//data = Util.median_filter(data);
 		//data = Util.stretch(data);
 		height = data.length;
 		width = data[0].length;
+		imgGrayScale = Util.makeImg(data);
+		Util.imgLeft = imgGrayScale;
 	}
 
 	void doSobel() {

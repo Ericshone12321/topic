@@ -203,4 +203,17 @@ public class Util {
 		}
 		return newData;
 	}
+
+	static int[][][] cutside(int[][][] data, int[][][] side) {
+        for(int i = 0; i < data.length; i++) {
+            for(int j = 0; j < data[i].length; j++) {
+                if(data[i][j][0] == 255 && data[i][j][0] == side[i][j][0]) {
+                    data[i][j][0] = 0;
+                    data[i][j][1] = 0;
+                    data[i][j][2] = 0;
+                }
+            }
+        }
+        return data;
+    }
 }
